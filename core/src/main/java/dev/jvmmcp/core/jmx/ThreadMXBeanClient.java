@@ -40,7 +40,11 @@ public class ThreadMXBeanClient implements ThreadDiagnosticPort {
         long totalStarted = threadMXBean.getTotalStartedThreadCount();
 
         long[] threadIds = threadMXBean.getAllThreadIds();
-        
+        if (threadIds == null) {
+            // a proxy to a restricted or exiting JVM can return null instead of an empty array
+            threadIds = new long[0];
+        }
+
         int runnable = 0;
         int blocked = 0;
         int waiting = 0;
