@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.IOException;
 
 /**
@@ -237,6 +239,11 @@ public class ActuatorProbe {
         return List.of(base + "/actuator/beans", base + "/beans");
     }
 
+    // `java -jar app.jar --server.port=8085` sets no system property: the port is only in the
+    // command line, which HotSpot exposes as sun.java.command.
+    private static final Pattern COMMAND_LINE_PORT =
+        Pattern.compile("(?:^|\\s)(?:--|-D)(management\\.server\\.port|server\\.port)=(\\S+)");
+
     private Set<Integer> extractCandidatePorts(VirtualMachine vm) {
         Set<Integer> ports = new LinkedHashSet<>();
         try {
@@ -250,6 +257,10 @@ public class ActuatorProbe {
 
             addPortFromProperty(ports, agentProps.getProperty("management.server.port"));
             addPortFromProperty(ports, agentProps.getProperty("server.port"));
+
+            for (String port : portsFromCommandLine(sysProps.getProperty("sun.java.command"))) {
+                addPortFromProperty(ports, port);
+            }
         } catch (Exception ignored) {}
 
         ports.add(8080);
@@ -257,6 +268,24 @@ public class ActuatorProbe {
         ports.add(9090);
 
         return ports;
+    }
+
+    /**
+     * The {@code --management.server.port=} and {@code --server.port=} values (or their {@code -D}
+     * forms) in a command line, management ports first, as the system properties are read.
+     */
+    static List<String> portsFromCommandLine(String command) {
+        if (command == null) {
+            return List.of();
+        }
+        List<String> management = new ArrayList<>();
+        List<String> server = new ArrayList<>();
+        Matcher m = COMMAND_LINE_PORT.matcher(command);
+        while (m.find()) {
+            (m.group(1).startsWith("management") ? management : server).add(m.group(2));
+        }
+        management.addAll(server);
+        return management;
     }
 
     private void addPortFromProperty(Set<Integer> ports, String portStr) {
