@@ -79,6 +79,14 @@ class PostgresSchemaReaderValidationTest {
         org.assertj.core.api.Assertions.assertThat(PostgresSchemaReader.validateSchemaName("my_schema_2026")).isEqualTo("my_schema_2026");
     }
 
+    @Test
+    @DisplayName("validateSchemaName folds an unquoted schema name to lowercase, as PostgreSQL does")
+    void shouldFoldSchemaNamesToLowercase() {
+        org.assertj.core.api.Assertions.assertThat(PostgresSchemaReader.validateSchemaName("Public")).isEqualTo("public");
+        org.assertj.core.api.Assertions.assertThat(PostgresSchemaReader.validateSchemaName("MY_SCHEMA")).isEqualTo("my_schema");
+        org.assertj.core.api.Assertions.assertThat(PostgresSchemaReader.validateSchemaName("  Sales  ")).isEqualTo("sales");
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {
         "public; DROP TABLE users;--",

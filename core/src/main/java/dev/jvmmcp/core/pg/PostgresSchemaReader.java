@@ -13,6 +13,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class PostgresSchemaReader implements AutoCloseable {
@@ -131,7 +132,9 @@ public class PostgresSchemaReader implements AutoCloseable {
         if (trimmed.length() > 63 || !trimmed.matches("^[a-zA-Z_][a-zA-Z0-9_]*$")) {
             throw new IllegalArgumentException("Invalid schema name: must be a valid SQL identifier (alphanumeric and underscore, starting with letter/underscore, max 63 chars)");
         }
-        return trimmed;
+        // PostgreSQL folds unquoted identifiers to lowercase, and the catalogs this name is
+        // compared against store them that way: "Sales" names the schema sales.
+        return trimmed.toLowerCase(Locale.ROOT);
     }
 
     private static String buildCacheKey(String jdbcUrl, String username, String password) {
