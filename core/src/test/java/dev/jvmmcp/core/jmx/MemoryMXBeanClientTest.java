@@ -140,7 +140,7 @@ class MemoryMXBeanClientTest {
     }
 
     @Test
-    @DisplayName("evaluatePressure flags bounded Metaspace and class space pressure")
+    @DisplayName("evaluatePressure flags bounded Metaspace and class space pressure but reports the heap ratio")
     void shouldFlagBoundedMetaspaceAndClassSpacePressure() {
         MemoryUsageInfo normalHeap = new MemoryUsageInfo(100, 200, 500, 1000, 20.0, 200.0, 1000.0);
         MemoryPoolInfo boundedMetaspace = pool("Metaspace", usage(960, 1000, 1000));
@@ -152,7 +152,7 @@ class MemoryMXBeanClientTest {
         );
 
         assertThat(metaspacePressure.level()).isEqualTo(MemoryPressureLevel.CRITICAL);
-        assertThat(metaspacePressure.heapUsageRatio()).isEqualTo(0.96);
+        assertThat(metaspacePressure.heapUsageRatio()).isEqualTo(0.2);
         assertThat(metaspacePressure.recommendation()).contains("Metaspace");
 
         MemoryPoolInfo unboundedMetaspace = pool("Metaspace", usage(99, 100, -1));
@@ -165,7 +165,7 @@ class MemoryMXBeanClientTest {
         );
 
         assertThat(classSpacePressure.level()).isEqualTo(MemoryPressureLevel.CRITICAL);
-        assertThat(classSpacePressure.heapUsageRatio()).isEqualTo(0.96);
+        assertThat(classSpacePressure.heapUsageRatio()).isEqualTo(0.2);
         assertThat(classSpacePressure.recommendation()).contains("Metaspace/Class Space");
     }
 

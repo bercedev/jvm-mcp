@@ -135,7 +135,8 @@ public class MemoryMXBeanClient implements MemoryDiagnosticPort {
             recommendation = "NORMAL: Memory consumption is healthy (< 85% utilization). Garbage collection pauses are within normal thresholds.";
         }
 
-        return new MemoryPressure(level, Math.round(maxMemoryRatio * 100.0) / 100.0, totalGcTime, totalGcCount, recommendation);
+        // the level follows the fuller of heap and metaspace, but the ratio reported is the heap's own
+        return new MemoryPressure(level, Math.round(heapRatio * 100.0) / 100.0, totalGcTime, totalGcCount, recommendation);
     }
 
     @Override
