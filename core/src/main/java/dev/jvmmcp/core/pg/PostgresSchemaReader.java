@@ -1,6 +1,7 @@
 package dev.jvmmcp.core.pg;
 
 import dev.jvmmcp.core.pg.PostgresModels.*;
+import dev.jvmmcp.core.util.SensitiveDataRedactor;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -436,9 +437,11 @@ public class PostgresSchemaReader implements AutoCloseable {
         }
     }
 
-    private static String sanitizeQuery(String query) {
+    static String sanitizeQuery(String query) {
         if (query == null) return null;
-        // Redact literals in password statements or tokens
-        return query.replaceAll("(?i)(password\\s*(?:=|with)\\s*)'[^']*'", "$1'***'");
+        // Redact literals in password statements, then every credential pattern the other
+        // tool outputs are scrubbed for (bearer and basic tokens, API keys, JWTs, JDBC URLs).
+        String sanitized = query.replaceAll("(?i)(password\\s*(?:=|with)\\s*)'[^']*'", "$1'***'");
+        return SensitiveDataRedactor.redact(sanitized);
     }
 }

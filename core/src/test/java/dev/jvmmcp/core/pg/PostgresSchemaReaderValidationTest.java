@@ -95,4 +95,27 @@ class PostgresSchemaReaderValidationTest {
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("Invalid schema name");
     }
+
+    @Test
+    @DisplayName("sanitizeQuery redacts tokens and API keys in slow queries, not only passwords")
+    void shouldRedactCredentialsInSlowQueries() {
+        String bearer = PostgresSchemaReader.sanitizeQuery(
+            "INSERT INTO audit (header) VALUES ('Bearer abcDEF123456.token')");
+        org.assertj.core.api.Assertions.assertThat(bearer).contains("Bearer ***").doesNotContain("abcDEF123456");
+
+        String apiKey = PostgresSchemaReader.sanitizeQuery(
+            "UPDATE integrations SET api_key = 'sk_live_51Habc' WHERE id = 7");
+        org.assertj.core.api.Assertions.assertThat(apiKey).contains("api_key=***").doesNotContain("sk_live_51Habc");
+
+        String jwt = PostgresSchemaReader.sanitizeQuery(
+            "SELECT * FROM sessions WHERE jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.c2lnbmF0dXJl'");
+        org.assertj.core.api.Assertions.assertThat(jwt).doesNotContain("eyJhbGciOiJIUzI1NiJ9");
+
+        String password = PostgresSchemaReader.sanitizeQuery("ALTER USER app SET password = 'hunter2'");
+        org.assertj.core.api.Assertions.assertThat(password).doesNotContain("hunter2");
+
+        String plain = "SELECT id, name FROM customers WHERE region = $1";
+        org.assertj.core.api.Assertions.assertThat(PostgresSchemaReader.sanitizeQuery(plain)).isEqualTo(plain);
+        org.assertj.core.api.Assertions.assertThat(PostgresSchemaReader.sanitizeQuery(null)).isNull();
+    }
 }
