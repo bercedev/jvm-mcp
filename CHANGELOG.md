@@ -34,10 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated documentation to emphasize "Zero runtime framework overhead with self-contained packaging and zero target-application modifications" over generic "zero-dependency" claims.
 
 ### Fixed
+- **Parseable Deadlock Report in `get_thread_diagnostics`**: the second content block is now the deadlock report's JSON alone. It used to start with `Deadlock Report: `, so a client parsing each block as JSON failed on it.
 - **Thread Summary with No Thread IDs**: `ThreadMXBeanClient.getThreadSummary` treats a `null` from `getAllThreadIds()` as no threads and returns zero state counts instead of throwing `NullPointerException`.
 - **Heap Usage Ratio in `MemoryPressure`**: `heapUsageRatio` now holds the heap's own used/max ratio. It used to carry the larger of the heap and Metaspace/Class Space ratios, so a full Metaspace over a near-idle heap read as 96% heap usage. The pressure level and recommendation still follow the fuller of the two.
 - **Main Class of Modular Launches**: `jvm-mcp list` and `list_jvms` now show `module/Main` for a JVM started with `-m`, `--module` or `--module=`, instead of the flag itself (`-m`).
 - **Credentials in Slow-Query Output**: `find_slow_queries` and `jvm-mcp pg` now pass each query through `SensitiveDataRedactor`, so bearer and basic tokens, API keys, JWTs and JDBC credentials in a slow query are redacted, not only `password = '...'` literals.
+- **Mixed-Case Schema Names in PostgreSQL Tools**: `validateSchemaName` now folds the name to lowercase, as PostgreSQL does for unquoted identifiers, so `--schema Sales` finds the tables of `sales` instead of reporting none.
 - **Defensive JSON Parsing in `SimpleJson`**: Malformed numbers (`-`, `1.`, `1e`, `-1.5e-`) and truncated or non-hexadecimal `\u` escapes now fail with a positioned `IllegalArgumentException` instead of leaking `NumberFormatException`; non-ASCII digits are no longer routed into the number parser.
 - **Unbounded JVM Memory Reporting**: `MemoryUsageInfo` now reports `maxMb` and `usedPercent` as `-1` when JMX exposes no upper bound (`max == -1`, e.g. non-heap memory or an unbounded pool such as Metaspace) instead of substituting committed bytes as the limit; `jvm-mcp memory` renders those quotas as `unbounded` (with `N/A` percent where a ratio is shown). A `max` of `0` remains a real numeric bound and existing bounded output is unchanged.
 
